@@ -1,7 +1,9 @@
 package com.example.administrator.androidinternet;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -18,10 +20,12 @@ import java.net.URL;
 
 public class MainActivity extends AppCompatActivity  {
 
-private Button mBtnGet;
+    private Button mBtnGet;
     private TextView mTvShow;
     private Handler handler;
+    private Context ctx;
 
+    private static final int SHOW = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -29,14 +33,21 @@ private Button mBtnGet;
         setContentView(R.layout.activity_main);
         mBtnGet = (Button)findViewById(R.id.get);
         mTvShow = (TextView)findViewById(R.id.show);
+
+        handler=new Handler(){
+            public void handleMessage(Message msg){
+                switch (msg.what){
+                    case SHOW:
+                        mTvShow.setText((CharSequence) msg.obj);
+                }
+                                   }
+        };
         mBtnGet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Connection();
 
-
-Connection();
-
-            }
+                           }
         });
     }
     private void Connection(){
@@ -46,22 +57,25 @@ Connection();
                     URL url = new URL("http://www.baidu.com");
                     final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
-                    if (connection.getResponseCode() == 2000) {
                         InputStream inputstream = connection.getInputStream();
                         final BufferedReader reader = new BufferedReader(new InputStreamReader(inputstream));
-                        runOnUiThread(new Runnable() {
+
+                    Message message = Message.obtain();
+                    message.what = SHOW;
+                    message.obj=reader.readLine();
+                    handler.sendMessage(message);
+                       /* runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 try {
-                                    mTvShow.setText(reader.readLine());
+                                   Toast.makeText(MainActivity.this,reader.readLine(),Toast.LENGTH_SHORT).show();
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
                             }
-                        });
+                        });*/
 
 
-                    }
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 } catch (ProtocolException e) {
@@ -70,6 +84,10 @@ Connection();
                     e.printStackTrace();
                 }
             }
-        };
+        }.start();
+
+    }
+    public Handler getHandler(){
+        return this.handler;
     }
 }
